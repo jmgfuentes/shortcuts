@@ -9,20 +9,11 @@ type Props = {
   onSave(input: ShortcutInput): void;
 };
 
-const typeOptions = [
-  { value: "link", label: "Link" },
-  { value: "app", label: "App" },
-  { value: "doc", label: "Document" },
-  { value: "dashboard", label: "Dashboard" },
-  { value: "other", label: "Other" },
-] as const;
-
 export function AddShortcutDialog({ open, onClose, onSave }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
   const [icon, setIcon] = useState("");
-  const [type, setType] = useState<typeof typeOptions[number]["value"]>("link");
   const [tagsText, setTagsText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +28,10 @@ export function AddShortcutDialog({ open, onClose, onSave }: Props) {
   }, [open]);
 
   function parseTags(text: string): string[] | undefined {
-    const arr = text.split(",").map((t) => t.trim()).filter(Boolean);
+    const arr = text
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
     return arr.length ? arr : undefined;
   }
 
@@ -46,11 +40,10 @@ export function AddShortcutDialog({ open, onClose, onSave }: Props) {
     setError(null);
 
     const candidate = {
-      title,
+      title: title.trim(),
       description: description.trim() ? description.trim() : undefined,
       url: url.trim(),
       icon: icon.trim() ? icon.trim() : undefined,
-      type,
       tags: parseTags(tagsText),
     };
 
@@ -69,7 +62,6 @@ export function AddShortcutDialog({ open, onClose, onSave }: Props) {
       setDescription("");
       setUrl("");
       setIcon("");
-      setType("link");
       setTagsText("");
       onClose();
     } finally {
@@ -143,24 +135,7 @@ export function AddShortcutDialog({ open, onClose, onSave }: Props) {
             onChange={(e) => setIcon(e.target.value)}
             placeholder="📊 or https://.../favicon.ico"
           />
-          <p className="text-[11px] text-green-700/80">
-            Tip: Use an emoji for a classic terminal vibe.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm text-green-200">Type</label>
-          <select
-            className="w-full rounded border border-green-700/50 bg-black/40 px-3 py-2 text-green-200 outline-none focus:border-green-400/70 focus:ring-2 focus:ring-green-500/20"
-            value={type}
-            onChange={(e) => setType(e.target.value as any)}
-          >
-            {typeOptions.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-black text-green-200">
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <p className="text-[11px] text-green-700/80">Tip: Use an emoji for a classic terminal vibe.</p>
         </div>
 
         <div className="space-y-2">

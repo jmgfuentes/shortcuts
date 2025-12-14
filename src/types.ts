@@ -12,7 +12,6 @@ export type Shortcut = {
   description?: string;
   url: string;
   icon?: string;           // emoji ("📎") o URL ("https://.../favicon.ico")
-  type: ShortcutType;
   tags?: string[];         // etiquetas libres
   createdAt: string;       // ISO
   updatedAt?: string;      // ISO

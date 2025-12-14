@@ -107,8 +107,8 @@ export default function Page() {
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,
-        ...input,
-        type: input.type as ShortcutType,
+        ...input
+        ,
       };
       setShortcuts((prev) => addShortcutLocal(prev, item));
     }
@@ -247,7 +247,7 @@ export default function Page() {
                 </div>
               )}
 
-              <p className="mt-2 text-[11px] text-green-700">Type: {s.type}</p>
+              
             </div>
           ))}
         </section>

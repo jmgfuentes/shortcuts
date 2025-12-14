@@ -21,7 +21,6 @@ export function ListRow({ s, onEdit, onDelete }: Props) {
       <td>{s.description ?? "—"}</td>
       <td className="truncate max-w-[200px]">{s.url}</td>
       <td>{s.tags?.join(", ") ?? "—"}</td>
-      <td>{s.type}</td>
       <td>
         <button onClick={() => onEdit(s.id)}>Edit</button>{" "}
         <button onClick={() => onDelete(s.id)}>Delete</button>
