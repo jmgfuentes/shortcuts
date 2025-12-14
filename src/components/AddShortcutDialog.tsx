@@ -88,7 +88,7 @@ export function AddShortcutDialog({
     <dialog
       ref={dialogRef}
       onCancel={onClose}
-      className="rounded-lg border border-green-700/40 bg-black/70 p-0 text-green-300 shadow-2xl backdrop:bg-black/70"
+      className="rounded-lg border border-green-700/40 bg-black/70 p-0 text-green-300 shadow-2xl backdrop:bg-black/70 fixed inset-0 mx-auto my-auto max-w-lg w-full"
     >
       <form onSubmit={handleSubmit} className="min-w-[360px] space-y-4 p-4 font-mono">
         {/* Header */}

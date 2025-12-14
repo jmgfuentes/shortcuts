@@ -276,7 +276,7 @@ export default function Page() {
 
       {/* Footer */}
       <footer className="mt-12 text-center text-[11px] text-green-700/80">
-        © {new Date().getFullYear()} Jesús M. Fuentes · Beta · Local-only data
+        © {new Date().getFullYear()} Jesús M. González Fuentes · Beta · Local-only data
       </footer>
     </main>
   );
