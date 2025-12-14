@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AddShortcutDialog } from "@/components/AddShortcutDialog";
 import { ListRow } from "@/components/ListRow";
-import type { Shortcut, ShortcutType } from "@/types";
+import type { Shortcut } from "@/types";
 import {
   loadShortcuts,
   addShortcutLocal,
@@ -12,69 +12,43 @@ import {
   saveShortcuts,
   updateShortcutLocal,
 } from "@/lib/storage";
-import { type ShortcutInput } from "@/lib/validators";
+import type { ShortcutInput } from "@/lib/validators";
 
 type ViewMode = "card" | "list";
-const VIEW_STORAGE_KEY = "shortcuts:view";
-const QUERY_STORAGE_KEY = "shortcuts:query";
-const TAGS_FILTER_STORAGE_KEY = "shortcuts:tagsFilter";
 
 export default function Page() {
   const [open, setOpen] = useState(false);
   const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("card");
+
   const [query, setQuery] = useState("");
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
+  // Initial load
   useEffect(() => {
     setShortcuts(loadShortcuts());
-
-    const v = localStorage.getItem(VIEW_STORAGE_KEY);
-    if (v === "card" || v === "list") setView(v);
-
-    const q = localStorage.getItem(QUERY_STORAGE_KEY);
-    if (q) setQuery(q);
-
-    const t = localStorage.getItem(TAGS_FILTER_STORAGE_KEY);
-    if (t) {
-      try {
-        const parsed = JSON.parse(t);
-        if (Array.isArray(parsed)) setActiveTags(parsed);
-      } catch {}
-    }
   }, []);
 
+  // Persist shortcuts
   useEffect(() => {
     saveShortcuts(shortcuts);
   }, [shortcuts]);
 
-  useEffect(() => {
-    localStorage.setItem(VIEW_STORAGE_KEY, view);
-  }, [view]);
-
-  useEffect(() => {
-    localStorage.setItem(QUERY_STORAGE_KEY, query);
-  }, [query]);
-
-  useEffect(() => {
-    localStorage.setItem(TAGS_FILTER_STORAGE_KEY, JSON.stringify(activeTags));
-  }, [activeTags]);
-
   const allTags = useMemo(() => {
     const set = new Set<string>();
-    shortcuts.forEach((s) => (s.tags ?? []).forEach((t) => set.add(t)));
+    shortcuts.forEach((s) => s.tags?.forEach((t) => set.add(t)));
     return Array.from(set).sort();
   }, [shortcuts]);
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase().trim();
+    const q = query.trim().toLowerCase();
     return shortcuts.filter((s) => {
       const matchesQuery =
         !q ||
         s.title.toLowerCase().includes(q) ||
-        s.url.toLowerCase().includes(q) ||
         s.description?.toLowerCase().includes(q) ||
+        s.url.toLowerCase().includes(q) ||
         s.tags?.some((t) => t.toLowerCase().includes(q));
 
       const matchesTags =
@@ -84,6 +58,10 @@ export default function Page() {
       return matchesQuery && matchesTags;
     });
   }, [shortcuts, query, activeTags]);
+
+  const editingItem = editingId
+    ? shortcuts.find((s) => s.id === editingId)
+    : null;
 
   function openCreate() {
     setEditingId(null);
@@ -95,30 +73,40 @@ export default function Page() {
     setOpen(true);
   }
 
+  function closeModal() {
+    setOpen(false);
+    setEditingId(null);
+  }
+
   function handleSave(input: ShortcutInput) {
     if (editingId) {
       setShortcuts((prev) =>
-        updateShortcutLocal(prev, editingId, input)
+        updateShortcutLocal(prev, editingId, {
+          ...input,
+          updatedAt: new Date().toISOString(),
+        })
       );
-      setEditingId(null);
     } else {
       const now = new Date().toISOString();
-      const item: Shortcut = {
+      const newItem: Shortcut = {
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,
-        ...input
-        ,
+        ...input,
       };
-      setShortcuts((prev) => addShortcutLocal(prev, item));
+      setShortcuts((prev) => addShortcutLocal(prev, newItem));
     }
-    setOpen(false);
+
+    closeModal();
   }
 
   function handleDelete(id: string) {
-    if (confirm("Delete this shortcut?")) {
-      setShortcuts((prev) => removeShortcutLocal(prev, id));
-    }
+    if (!confirm("Delete this shortcut?")) return;
+    setShortcuts((prev) => removeShortcutLocal(prev, id));
+  }
+
+  function toggleView() {
+    setView((v) => (v === "card" ? "list" : "card"));
   }
 
   function toggleTag(tag: string) {
@@ -127,66 +115,97 @@ export default function Page() {
     );
   }
 
+  function clearFilters() {
+    setQuery("");
+    setActiveTags([]);
+  }
+
   return (
-    <main
-  className="relative min-h-screen w-full p-4 sm:p-6 lg:p-8 text-green-400"
-  style={{
-    fontFamily:
-      '"Courier New", Courier, "IBM Plex Mono", Menlo, Consolas, monospace',
-  }}
->
+    <main className="relative min-h-screen w-full px-6 py-6 font-mono text-green-400">
       {/* Background */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-10 [background:repeating-linear-gradient(to_bottom,transparent_0px,transparent_2px,rgba(0,0,0,0.6)_3px,rgba(0,0,0,0.6)_4px)]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-30 [background:radial-gradient(ellipse_at_center,rgba(0,255,140,0.1)_0%,rgba(0,0,0,0.9)_70%)]" />
 
       {/* Header */}
-      <header className="flex items-center justify-between py-6">
-        <h1 className="text-3xl font-bold [text-shadow:0_0_12px_rgba(0,255,140,0.35)]">
-          My Shortcuts
-        </h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setView(view === "card" ? "list" : "card")}
-            className="rounded border border-green-700/50 bg-black/40 px-3 py-2 text-sm hover:bg-green-500/10"
-          >
-            {view === "card" ? "List view" : "Card view"}
-          </button>
-          <button
-            onClick={openCreate}
-            className="rounded border border-green-500/60 bg-green-500/10 px-4 py-2 hover:bg-green-500/20"
-          >
-            +
-          </button>
+      <header className="mb-6">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold [text-shadow:0_0_12px_rgba(0,255,140,0.35)]">
+            My Shortcuts
+          </h1>
+
+          <div className="flex gap-2">
+            <button
+              onClick={toggleView}
+              className="rounded border border-green-700/50 bg-black/40 px-3 py-2 text-sm hover:bg-green-500/10"
+            >
+              {view === "card" ? "List view" : "Card view"}
+            </button>
+            <button
+              onClick={openCreate}
+              className="rounded border border-green-500/60 bg-green-500/10 px-4 py-2 hover:bg-green-500/20"
+            >
+              +
+            </button>
+          </div>
         </div>
+
+        {/* Description */}
+        <p className="mt-3 text-sm text-green-300/80">
+          Now save a lot of time every day thanks to ‘My Shortcuts’. Manage your
+          shortcuts to your favourite applications.
+        </p>
       </header>
 
       {/* Filters */}
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search..."
-        className="mb-4 w-full rounded border border-green-700/50 bg-black/40 px-3 py-2"
-      />
-
-      {allTags.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          {allTags.map((t) => (
+      <section className="mb-4 space-y-3">
+        <div className="flex gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search title, description, URL or tags…"
+            className="w-full rounded border border-green-700/50 bg-black/40 px-3 py-2 outline-none"
+          />
+          {(query || activeTags.length > 0) && (
             <button
-              key={t}
-              onClick={() => toggleTag(t)}
-              className={`rounded-full px-3 py-1 text-xs ${
-                activeTags.includes(t)
-                  ? "bg-green-500/20 text-green-200"
-                  : "bg-black/40 text-green-400"
-              }`}
+              onClick={clearFilters}
+              className="rounded border border-green-700/50 bg-black/40 px-3 py-2"
             >
-              {t}
+              Clear
             </button>
-          ))}
+          )}
         </div>
-      )}
 
-      <AddShortcutDialog open={open} onClose={() => setOpen(false)} onSave={handleSave} />
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((t) => {
+              const active = activeTags.includes(t);
+              return (
+                <button
+                  key={t}
+                  onClick={() => toggleTag(t)}
+                  className={
+                    active
+                      ? "rounded-full border border-green-300/60 bg-green-500/15 px-3 py-1 text-xs"
+                      : "rounded-full border border-green-700/50 bg-black/40 px-3 py-1 text-xs hover:bg-green-500/10"
+                  }
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Modal */}
+      <AddShortcutDialog
+        open={open}
+        onClose={closeModal}
+        onSave={handleSave}
+        initialValues={editingItem ?? undefined}
+        titleText={editingItem ? "Edit shortcut" : "New shortcut"}
+      />
 
       {/* Content */}
       {view === "card" ? (
@@ -194,37 +213,18 @@ export default function Page() {
           {filtered.map((s) => (
             <div
               key={s.id}
-              className="group rounded-lg border border-green-700/40 bg-black/40 p-4 hover:border-green-400/60"
+              className="group rounded border border-green-700/40 bg-black/40 p-4 hover:border-green-400/60"
             >
               <div className="flex justify-between gap-2">
-                <div className="truncate font-semibold text-green-200">
-                    <a
-    href={s.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="block truncate font-semibold text-green-200 hover:underline [text-shadow:0_0_10px_rgba(0,255,140,0.22)]"
-    title={s.title}
-  >
-    {s.icon ? (
-      /^https?:\/\//.test(s.icon) ? (
-        <img
-          src={s.icon}
-          alt=""
-          className="mr-2 inline-block h-5 w-5 rounded align-[-3px]"
-        />
-      ) : (
-        <span className="mr-2 inline-block text-xl text-green-200" aria-hidden="true">
-          {s.icon}
-        </span>
-      )
-    ) : (
-      <span className="mr-2 text-green-700/70" aria-hidden="true">
-        ▣
-      </span>
-    )}
-    {s.title}
-  </a>
-                </div>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate font-semibold text-green-200 hover:underline"
+                >
+                  {s.icon && <span className="mr-1">{s.icon}</span>}
+                  {s.title}
+                </a>
                 <div className="flex gap-1">
                   <button onClick={() => openEdit(s.id)}>✎</button>
                   <button onClick={() => handleDelete(s.id)}>✕</button>
@@ -237,7 +237,7 @@ export default function Page() {
 
               <p className="mt-2 truncate text-xs text-green-600">{s.url}</p>
 
-              {s.tags?.length && (
+              {s.tags?.length ? (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {s.tags.map((t) => (
                     <span key={t} className="text-[11px] opacity-70">
@@ -245,24 +245,19 @@ export default function Page() {
                     </span>
                   ))}
                 </div>
-              )}
-
-              
+              ) : null}
             </div>
           ))}
         </section>
       ) : (
-        <section className="overflow-x-auto">
+        <section className="py-4 overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead>
-              <tr>
-                <th>Icon</th>
-                <th>Title</th>
-                <th>Description</th>
-                <th>URL</th>
-                <th>Tags</th>
-                <th>Type</th>
-                <th />
+            <thead className="bg-green-500/5">
+              <tr className="text-left">
+                <th className="px-3 py-2">Shortcut</th>
+                <th className="px-3 py-2">Description</th>
+                <th className="px-3 py-2">Tags</th>
+                <th className="px-3 py-2 w-32">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -279,8 +274,9 @@ export default function Page() {
         </section>
       )}
 
-      <footer className="mt-12 text-center text-[11px] text-green-700">
-        © {new Date().getFullYear()} Jesús Manuel González Fuentes · Beta · Local-only data
+      {/* Footer */}
+      <footer className="mt-12 text-center text-[11px] text-green-700/80">
+        © {new Date().getFullYear()} Jesús M. Fuentes · Beta · Local-only data
       </footer>
     </main>
   );
