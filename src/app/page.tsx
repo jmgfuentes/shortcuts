@@ -13,6 +13,7 @@ import {
   updateShortcutLocal,
 } from "@/lib/storage";
 import type { ShortcutInput } from "@/lib/validators";
+import { useCsvImportExport } from "@/hooks/useCsvImportExport";
 
 type ViewMode = "card" | "list";
 
@@ -24,6 +25,8 @@ export default function Page() {
 
   const [query, setQuery] = useState("");
   const [activeTags, setActiveTags] = useState<string[]>([]);
+
+  const { exportToCsv, importFromFileReplace } = useCsvImportExport();
 
   // Initial load
   useEffect(() => {
@@ -120,6 +123,11 @@ export default function Page() {
     setActiveTags([]);
   }
 
+  async function handleImportCsv() {
+    const el = document.getElementById("import-csv") as HTMLInputElement | null;
+    el?.click();
+  }
+
   return (
     <main className="relative min-h-screen w-full px-6 py-6 font-mono text-green-400">
       {/* Background */}
@@ -135,12 +143,46 @@ export default function Page() {
           </h1>
 
           <div className="flex gap-2">
+            {/* Hidden file input */}
+            <input
+              id="import-csv"
+              type="file"
+              accept=".csv,.txt,text/csv,text/plain"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+
+                // Replace by default
+                const { shortcuts: next } = await importFromFileReplace(f);
+                setShortcuts(next);
+
+                // allow re-import same file
+                e.currentTarget.value = "";
+              }}
+            />
+
+            <button
+              onClick={handleImportCsv}
+              className="rounded border border-green-700/50 bg-black/40 px-3 py-2 text-sm hover:bg-green-500/10"
+            >
+              Import
+            </button>
+
+            <button
+              onClick={() => exportToCsv(shortcuts)}
+              className="rounded border border-green-700/50 bg-black/40 px-3 py-2 text-sm hover:bg-green-500/10"
+            >
+              Export
+            </button>
+
             <button
               onClick={toggleView}
               className="rounded border border-green-700/50 bg-black/40 px-3 py-2 text-sm hover:bg-green-500/10"
             >
               {view === "card" ? "List view" : "Card view"}
             </button>
+
             <button
               onClick={openCreate}
               className="rounded border border-green-500/60 bg-green-500/10 px-4 py-2 hover:bg-green-500/20"
@@ -276,7 +318,8 @@ export default function Page() {
 
       {/* Footer */}
       <footer className="mt-12 text-center text-[11px] text-green-700/80">
-        © {new Date().getFullYear()} Jesús M. González Fuentes · Beta · Local-only data
+        © {new Date().getFullYear()} Jesús M. González Fuentes · Beta · Local-only
+        data
       </footer>
     </main>
   );
