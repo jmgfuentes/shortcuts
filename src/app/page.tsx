@@ -502,6 +502,13 @@ export default function Page() {
         initialValues={editingShortcut ?? undefined}
         titleText={editingId ? "Edit shortcut" : "New shortcut"}
       />
+      <footer className="mt-10 border-t border-green-700/30 bg-black/40 px-4 py-4 text-center text-xs text-green-700/80">
+  © {new Date().getFullYear()} Jesús Manuel González Fuentes  
+  <br />
+  Data stored locally in your browser · Not a commercial product  
+  <br />
+  Built with Next.js · TypeScript · React · Tailwind CSS
+</footer>
     </main>
   );
 }
