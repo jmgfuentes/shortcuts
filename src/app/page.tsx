@@ -105,10 +105,23 @@ export default function Page() {
     setShortcuts((prev) => removeShortcutLocal(prev, id));
   };
 
-  const onCreate = (data: ShortcutInput) => {
-    setShortcuts((prev) => addShortcutLocal(prev, data));
-    setOpen(false);
+ const onCreate = (data: ShortcutInput) => {
+  const now = new Date().toISOString();
+
+  const item: Shortcut = {
+    id: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
+    title: data.title,
+    url: data.url,
+    description: data.description,
+    icon: data.icon,
+    tags: data.tags,
   };
+
+  setShortcuts((prev) => [...prev, item]);
+  setOpen(false);
+};
 
   const onUpdate = (data: ShortcutInput) => {
     if (!editingId) return;
