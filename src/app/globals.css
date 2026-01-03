@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #000000;
+  --foreground: #ffffff;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,15 +13,67 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* opcional: si algún día quieres light */
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
+/* Forzar fondo negro siempre (ignora preferencias del sistema) */
+html, body, #__next {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  min-height: 100%;
+  margin: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--background) !important;
+  color: var(--foreground) !important;
 }
+
+/* ==========================
+   Forzar sólo tema oscuro ✅
+   ==========================
+   - Anulamos clases comunes de fondo claro (Tailwind utilities y variantes)
+   - Capturamos estilos inline que usan "white", "#fff", "#ffffff"
+   - Normalizamos campos de formulario para que no muestren fondo blanco
+
+   Nota: usamos !important deliberadamente para asegurar prioridad sobre
+   utilidades o estilos inyectados por terceros.
+*/
+
+/* Clases de fondo claras habituales */
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.bg-gray-200,
+.bg-neutral-50,
+.bg-slate-50,
+.bg-zinc-50 {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Captura estilos inline que contengan blanco o código hex corto/largo */
+*[style*="background: white"],
+*[style*="background-color: white"],
+*[style*="background:#fff"],
+*[style*="background:#ffffff"],
+*[style*="#fff"],
+*[style*="#ffffff"] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Formularios y controles */
+input,
+textarea,
+select,
+button {
+  background-color: transparent !important;
+  color: inherit !important;
+  caret-color: var(--foreground) !important;
+}
+
+/* Refuerzo global para elementos raíz */
+html, body, #__next {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+}
+ 
