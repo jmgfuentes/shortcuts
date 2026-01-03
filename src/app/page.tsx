@@ -1,5 +1,16 @@
 // src/app/page.tsx
 "use client";
+/*
+  Page (client):
+  - Manages the in-memory `shortcuts` state and persists to `localStorage` via
+    helpers in `src/lib/storage.ts` (STORAGE_KEY = "shortcuts:v1").
+  - Uses `useCsvImportExport()` (`src/hooks/useCsvImportExport.ts`) for CSV
+    import/export (semicolon-delimited, emits a UTF-8 BOM; import replaces
+    dataset and deduplicates by URL — last one wins).
+  - New items use `crypto.randomUUID()` and ISO timestamps (`new Date().toISOString()`).
+  - This file is a client component ("use client"); avoid adding server-only
+    APIs or filesystem access here. Keep state updates immutable.
+*/
 
 import { useEffect, useMemo, useState } from "react";
 import { AddShortcutDialog } from "@/components/AddShortcutDialog";
